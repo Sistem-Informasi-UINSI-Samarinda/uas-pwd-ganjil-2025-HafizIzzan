@@ -1,62 +1,67 @@
-<?php 
+<?php
 session_start();
 include '../../config/koneksi.php';
+
+$error = "";
+
+if (isset($_POST['login'])) {
+
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+
+    $query = mysqli_query(
+        $conn,
+        "SELECT * FROM users 
+         WHERE username='$username' OR email='$username' 
+         LIMIT 1"
+    );
+
+    if ($query && mysqli_num_rows($query) == 1) {
+
+        $user = mysqli_fetch_assoc($query);
+
+        if (password_verify($password, $user['password'])) {
+
+            $_SESSION['admin'] = $user['username'];
+            $_SESSION['nama']  = $user['nama_lengkap'];
+
+            header("Location: dashboard.php");
+            exit;
+        } else {
+            $error = "Password salah!";
+        }
+    } else {
+        $error = "Username atau email tidak ditemukan!";
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login Admin</title>
+
+    <link rel="stylesheet" href="../../assets/css/adminStyles/adminStyles.css">
 </head>
-<body>
-    <?php 
-    if(isset($_POST['login'])){
-        $input = $_POST['username'];
-        $password = $_POST['password'];
 
-        // Cek Input ke database apakah sudah sesuai atau belum dengan data yg ada
-        if(filter_var($input, FILTER_VALIDATE_EMAIL)){
-            $query = "SELECT * FROM users WHERE email ='$input'";
-        } else {
-            $query = "SELECT * FROM users WHERE username ='$input'";
-        }
+<body class="admin-login">
 
-        $result = mysqli_query($conn, $query);
+    <div class="login-box">
+        <h2>Login Admin</h2>
 
-        if(mysqli_num_rows($result) > 0){
-            $row = mysqli_fetch_assoc($result);
+        <?php if ($error != ""): ?>
+            <div class="error"><?= $error; ?></div>
+        <?php endif; ?>
 
-            if(password_verify($password, $row['password'])){
-                $_SESSION['user_id'] = $row['id'];
-                $_SESSION['nama_lengkap'] = $row['nama_lengkap'];
-                $_SESSION['username'] = $row['username'];
+        <form method="post">
+            <input type="text" name="username" placeholder="Username atau Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit" name="login">Login</button>
+        </form>
+    </div>
 
-                // arahkan ke admin
-                header("Location: dashboard.php");
-                exit();
-            }
-            else {
-                echo "<p style='color: red'> Password Salah</p>";
-            }
-        }
-        else{
-            echo "<p style='color: red'> Username/email tidak sesuai</p>";
-        }
-    }
-    ?>
-
-    <form method="post" action="">
-        <label>Username atau Email</label> <br> 
-        <input type="text" name="username" placeholder="Masukkan Username Email" required> <br>
-
-        <label>Password</label> <br>
-        <input type="password" name="password" placeholder="Masukkan Password" required> <br>
-        <br>
-
-        <button type="submit" name="login">Login</button>
-    </form>
-    
 </body>
+
 </html>
